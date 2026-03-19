@@ -29,7 +29,7 @@ def get_router_model():
 
 def get_planner_model():
     return ChatGoogleGenerativeAI(
-        model="gemini-3.1-pro-preview",
+        model="gemini-3-flash-preview",
         temperature=1.0,
         max_retries=2,
         thinking_level="low",
@@ -64,42 +64,42 @@ Clasifica la siguiente petición en UNA de estas rutas:
 Devuelve solo la estructura solicitada.
 
 PETICIÓN:
-{payload.model_dump_json(indent=2)}
-"""
+    {payload.model_dump_json(indent=2)}
+    """
 
     model = get_router_model().with_structured_output(
-        RouterDecision.model_json_schema(),
-        method="json_schema",
-    )
+            RouterDecision.model_json_schema(),
+            method="json_schema",
+        )
 
     result = model.invoke([
-        SystemMessage(content="Eres un router de intenciones para un asistente personal."),
-        HumanMessage(content=router_prompt),
-    ])
+            SystemMessage(content="Eres un router de intenciones para un asistente personal."),
+            HumanMessage(content=router_prompt),
+        ])
 
     print(f"[Router] route={result['route']} | reason={result['reason']}")
     return {
-        "route": result["route"],
-        "route_reason": result["reason"],
-    }
+            "route": result["route"],
+            "route_reason": result["reason"],
+        }
 
 
 def planner_node(state: GraphState):
     payload = BackendRequest(**state["backend_payload"])
 
-    planner_prompt = f"""
-Genera un plan accionable, realista y seguro para este usuario.
+    planner_prompt=f"""
+    Genera un plan accionable, realista y seguro para este usuario.
 
-DATOS:
-{payload.model_dump_json(indent=2)}
+    DATOS:
+    {payload.model_dump_json(indent=2)}
 
-REGLAS:
-- Responde en español.
-- Sé concreto.
-- Crea hitos, agenda semanal, riesgos y siguientes acciones.
-- Si falta información crítica, usa next_actions.
-- response_type = "plan"
-"""
+    REGLAS:
+    - Responde en español.
+    - Sé concreto.
+    - Crea hitos, agenda semanal, riesgos y siguientes acciones.
+    - Si falta información crítica, usa next_actions.
+    - response_type = "plan"
+    """
 
     model = get_planner_model().with_structured_output(
         CoachResponse.model_json_schema(),
